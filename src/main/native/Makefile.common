@@ -26,6 +26,6 @@ LIBBWA_LIBS = -lrt -lz
 
 # Cushaw variables ########
 CUSHAW_DIR = ./cushaw3-v3.0.3
-SPARKCUSHAW_FLAGS = -c -g -Wall -Wno-unused-function -O2 -fPIC -DHAVE_PTHREAD -DUSE_MALLOC_WRAPPERS $(JAVA_HOME_INCLUDES)
+SPARKCUSHAW_FLAGS = -static -O3 -Wall -fopenmp -funroll-loops -DCOMPRESSED_INPUT -DHAVE_SSSE3 -msse4 -fPIC -c -DHAVE_PTHREAD -DUSE_MALLOC_WRAPPERS $(JAVA_HOME_INCLUDES) -I ./cushaw3-v3.0.3/bamreader
 LIBCUSHAW_FLAGS = -shared -o
 LIBCUSHAW_LIBS = -lrt -lz

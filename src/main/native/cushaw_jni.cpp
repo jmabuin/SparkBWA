@@ -21,64 +21,150 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "com_github_sparkbwa_CushawJni.h"
 #include "cushaw3-v3.0.3/core/Sequence.h"
+#include "cushaw3-v3.0.3/core/Options.h"
+#include "cushaw3-v3.0.3/core/BSOptions.h"
+#include "cushaw3-v3.0.3/core/Genome.h"
+#include "cushaw3-v3.0.3/core/SAMSpark.h"
+#include "cushaw3-v3.0.3/core/PairedEndSpark.h"
 
 
+PairedEndSpark *pairedSpark;
+Genome *genome;
+Options *options;
+SAMSpark *samSpark;
+char *outputSAM;
 
-Sequence sequence1;
-Sequence sequence2;
-
-JNIEXPORT jint JNICALL JNIFUNCTION_CUSHAW(parseSequence1(JNIEnv * env, jobject object, jstring seq1)) {
-
-    const char *buf;
-    //const jbyte *str;
-    buf = (*env).GetStringUTFChars(seq1, NULL);
-
-    if (buf == NULL) {
-        return -1; /* OutOfMemoryError already thrown */
-    }
-
-    printf("%s parsing sequence: %s",__func__, buf);
-
-    sequence1 = Sequence(buf, FILE_FORMAT_FASTQ);
-
-    (*env).ReleaseStringUTFChars(seq1, buf);
-
-    return sequence1._length;
-
-}
-
-JNIEXPORT jint JNICALL JNIFUNCTION_CUSHAW(parseSequence2(JNIEnv * env, jobject object, jstring seq2)) {
-
-    const char *buf;
-    //const jbyte *str;
-    buf = (*env).GetStringUTFChars(seq2, NULL);
-
-    if (buf == NULL) {
-        return -1; /* OutOfMemoryError already thrown */
-    }
-
-    printf("%s parsing sequence: %s",__func__, buf);
-
-    sequence2 = Sequence(buf, FILE_FORMAT_FASTQ);
-
-    (*env).ReleaseStringUTFChars(seq2, buf);
-
-    return sequence2._length;
-}
-
-JNIEXPORT jint JNICALL JNIFUNCTION_CUSHAW(CushawInit(JNIEnv * env, jobject object, jint argN, jobjectArray arguments, jintArray argumentsSizes)) {
+JNIEXPORT jint JNICALL JNIFUNCTION_CUSHAW(CushawInit(JNIEnv * env, jobject object)) {
 
     //Parte argumentos
-   	char **argv;
-   	char **argvTmp;
+   	//char **argv;
+   	//char **argvTmp;
 
-   	int stringCount = (*env).GetArrayLength(arguments);//env->GetArrayLength(stringArray);
+   	//int stringCount = (*env).GetArrayLength(arguments);//env->GetArrayLength(stringArray);
 
-   	argvTmp = (char **) malloc(stringCount*sizeof(char **));
+   	//argvTmp = (char **) malloc(stringCount*sizeof(char **));
+
+    outputSAM = NULL;
+
+    options = new BSOptions();
+    genome = new Genome(options, true);
+    samSpark = new SAMSpark(options, genome, outputSAM);
+    pairedSpark = new PairedEndSpark(options, genome, samSpark);
 
    	return 1;
+
+}
+
+JNIEXPORT jint JNICALL JNIFUNCTION_CUSHAW(executeEstimateJNI(JNIEnv * env, jobject object, jstring seq1, jstring seq2)) {
+
+    const char *buf1, *buf2;
+    //const jbyte *str;
+    buf1 = (*env).GetStringUTFChars(seq1, NULL);
+
+    if (buf1 == NULL) {
+        return -1; /* OutOfMemoryError already thrown */
+    }
+
+    char *charSeq1 = (char *) malloc(sizeof(char)*(strlen(buf1)+1));
+    strcpy(charSeq1, buf1);
+
+
+    buf2 = (*env).GetStringUTFChars(seq2, NULL);
+
+    if (buf2 == NULL) {
+        return -1; /* OutOfMemoryError already thrown */
+    }
+
+    char *charSeq2 = (char *) malloc(sizeof(char)*(strlen(buf2)+1));
+    strcpy(charSeq2, buf2);
+
+    pairedSpark->executeEstimate(charSeq1, charSeq2);
+
+    free(charSeq1);
+    free(charSeq2);
+
+    (*env).ReleaseStringUTFChars(seq1, buf1);
+    (*env).ReleaseStringUTFChars(seq2, buf2);
+
+    return 1;
+}
+
+JNIEXPORT jint JNICALL JNIFUNCTION_CUSHAW(loadIndexJNI(JNIEnv * env, jobject object, jstring indexPath)) {
+
+
+    std::string bwtFileName, saFileName, annFileName;
+    std::string pacFileName, basePacFileName;
+    std::string baseBitmapFileName;
+
+    const char *buf1;
+    //const jbyte *str;
+    buf1 = (*env).GetStringUTFChars(indexPath, NULL);
+
+    if (buf1 == NULL) {
+        return -1; /* OutOfMemoryError already thrown */
+    }
+
+    char *charIndex = (char *) malloc(sizeof(char)*(strlen(buf1)+1));
+    strcpy(charIndex, buf1);
+
+    options->setBwtFileBase(charIndex);
+
+    std::string& bwtBase = options->getBwtFileBase();
+    /*using the reverse orientation of the genome*/
+    bwtFileName = bwtBase + ".rbwt";
+    saFileName = bwtBase + ".rsa";
+    annFileName = bwtBase + ".ann";
+    baseBitmapFileName = bwtBase + ".map";
+    pacFileName = bwtBase + ".pac";
+    basePacFileName = bwtBase + ".nt.pac"; /*for color-space*/
+
+    /*read the data from files*/
+    genome->_init(bwtFileName, saFileName, annFileName, baseBitmapFileName,
+    	pacFileName, basePacFileName, options->isColorSpace(),
+    	options->maskAmbiguous());
+
+    return 1;
+
+}
+
+JNIEXPORT jstring JNICALL JNIFUNCTION_CUSHAW(alignJNI(JNIEnv * env, jobject object, jstring seq1, jstring seq2)) {
+
+    const char *buf1, *buf2;
+    //const jbyte *str;
+    buf1 = (*env).GetStringUTFChars(seq1, NULL);
+
+    if (buf1 == NULL) {
+        return (*env).NewStringUTF(""); /* OutOfMemoryError already thrown */
+    }
+
+    char *charSeq1 = (char *) malloc(sizeof(char)*(strlen(buf1)+1));
+    strcpy(charSeq1, buf1);
+
+
+    buf2 = (*env).GetStringUTFChars(seq2, NULL);
+
+    if (buf2 == NULL) {
+        return (*env).NewStringUTF(""); /* OutOfMemoryError already thrown */
+    }
+
+    char *charSeq2 = (char *) malloc(sizeof(char)*(strlen(buf2)+1));
+    strcpy(charSeq2, buf2);
+
+    char *result = (char *)malloc(sizeof(char) * 8192);
+
+    strcpy(result, pairedSpark->align(charSeq1, charSeq2));
+
+    free(charSeq1);
+    free(charSeq2);
+
+    (*env).ReleaseStringUTFChars(seq1, buf1);
+    (*env).ReleaseStringUTFChars(seq2, buf2);
+
+
+    return (*env).NewStringUTF(result);
 
 }

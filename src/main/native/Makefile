@@ -32,7 +32,7 @@ libbwa.so: sparkbwa bwa
 	cp $(BUILD_DIR)/libbwa.so ../../../target/classes/
 	rm $(BUILD_DIR)/*.o
 
-libcushaw.so: sparkcushaw cushaw
+libcushaw.so: cushaw sparkcushaw
 	$(CXX) $(LIBCUSHAW_FLAGS) $(BUILD_DIR)/libcushaw.so $(BUILD_DIR)/*.o $(LIBCUSHAW_LIBS)
 	cp $(BUILD_DIR)/libcushaw.so ../../../target/classes/
 	rm $(BUILD_DIR)/*.o
