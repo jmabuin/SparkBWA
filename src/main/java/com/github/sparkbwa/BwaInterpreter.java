@@ -318,6 +318,53 @@ public class BwaInterpreter {
 			.collect();
 	}
 
+	/**
+	 * Procedure to perform the alignment using paired reads with Cushaw as aligner
+	 * @param readsRDD The RDD containing the paired reads
+	 * @return A list of strings containing the resulting alignments
+	 */
+	private List<String> MapPairedCushaw(JavaRDD<Tuple2<String, String>> readsRDD) {
+		// The mapPartitionsWithIndex is used over this RDD to perform the alignment. The resulting sam filenames are returned
+		return readsRDD
+				.mapPartitionsWithIndex(new CushawPairedAlignment(readsRDD.context(), options.getIndexPath()), true)
+				.collect();
+	}
+	/**
+	 * Runs BWA with the specified options
+	 *
+	 * @brief This function runs BWA with the input data selected and with the options also selected
+	 *     by the user.
+	 */
+	public void runCushaw() {
+		LOG.info("["+this.getClass().getName()+"] :: Starting Aligning with Cushaw");
+
+		List<String> returnedValues;
+		JavaRDD<Tuple2<String, String>> readsRDD = handlePairedReadsSorting();
+		returnedValues = MapPairedCushaw(readsRDD);
+
+
+		try {
+			FileSystem fs = FileSystem.get(this.conf);
+
+			Path finalHdfsOutputFile = new Path(this.options.getOutputHdfsDir() + "/FullOutput.sam");
+			FSDataOutputStream outputFinalStream = fs.create(finalHdfsOutputFile, true);
+
+			// We iterate over the resulting files in HDFS and agregate them into only one file.
+			for (int i = 0; i < returnedValues.size(); i++) {
+
+				outputFinalStream.write(returnedValues.get(i).getBytes());
+
+			}
+
+			outputFinalStream.close();
+			fs.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+			LOG.error(e.toString());
+		}
+
+	}
+
   /**
    * Runs BWA with the specified options
    *
