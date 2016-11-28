@@ -110,6 +110,22 @@ public:
 			gzprintf(file, "%d%c", cigar >> 2, _alignOpName[cigar & 3]);
 		}
 	}
+	inline void cigarOut(char* file) {
+		uint32_t cigar;
+		char buffer[4096];
+
+		if (file == NULL) {
+			Utils::exit("Invalid file pointer in function %s line %d\n",
+					__FUNCTION__, __LINE__);
+		}
+		for (int32_t i = 0; i < _ncigar; ++i) {
+			cigar = _cigar[i];
+			/*print the cigar to the file*/
+			sprintf(buffer, "%d%c", cigar >> 2, _alignOpName[cigar & 3]);
+			strcat(file, buffer);
+		}
+	}
+
 	/*extend the cigar to the full length of the sequence*/
 	int extendCigar(int32_t length);
 

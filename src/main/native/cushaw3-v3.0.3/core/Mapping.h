@@ -8,6 +8,8 @@
 #ifndef MAPPING_H_
 #define MAPPING_H_
 #include "Macros.h"
+#include "CigarAlign.h"
+
 
 struct Mapping
 {

@@ -36,7 +36,7 @@ struct BwtAnn
 class Genome
 {
 public:
-	Genome(Options* options) {
+	Genome(Options* options, bool useSpark = false) {
 		string& bwtBase = options->getBwtFileBase();
 		string bwtFileName, saFileName, annFileName;
 		string pacFileName, basePacFileName;
@@ -59,9 +59,11 @@ public:
 		basePacFileName = bwtBase + ".nt.pac"; /*for color-space*/
 
 		/*read the data from files*/
-		_init(bwtFileName, saFileName, annFileName, baseBitmapFileName,
+		if(!useSpark) {
+			_init(bwtFileName, saFileName, annFileName, baseBitmapFileName,
 				pacFileName, basePacFileName, options->isColorSpace(),
 				options->maskAmbiguous());
+		}
 	}
 	~Genome() {
 		if (_bwt)
@@ -80,6 +82,10 @@ public:
 			delete[] _baseBitmap;
 		}
 	}
+
+	void _init(string bwtFileName, string saFileName, string annFileName,
+				string baseBitmapFileName, string pacFileName,
+				string basePacFileName, bool colorspace, bool maskAmbiguous);
 
 	inline BWT* getBWT() {
 		return _bwt;
@@ -145,6 +151,18 @@ public:
 					_anns[i]._length);
 		}
 	}
+	inline void genomeNamesOut(char *file) {
+		if (file == NULL) {
+			Utils::exit("Invalid file pointer in function %s line %d\n",
+					__FUNCTION__, __LINE__);
+		}
+		char buffer[4096];
+		for (int i = 0; i < _numSeqs; ++i) {
+			sprintf(buffer, "@SQ\tSN:%s\tLN:%d\n", _anns[i]._name,
+					_anns[i]._length);
+			strcat(file, buffer);
+		}
+	}
 
 private:
 	/*private member variables*/
@@ -161,10 +179,11 @@ private:
 	BwtAnn* _anns; // _numSeqs elements
 	int _numSeqs;
 
-private:
-	/*private member functions*/
+/*private:
+	//private member functions
 	void _init(string bwtFileName, string saFileName, string annFileName,
 			string baseBitmapFileName, string pacFileName,
 			string basePacFileName, bool colorspace, bool maskAmbiguous);
+			*/
 };
 #endif /* GENOME_H_ */

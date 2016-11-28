@@ -175,6 +175,82 @@ public:
 		}
 	}
 
+	const string& getRgId() const {
+		return _rgID;
+	}
+
+	void setRgId(const string& rgId) {
+		_rgID = rgId;
+	}
+
+	const string& getRgCn() const {
+		return _rgCN;
+	}
+
+	void setRgCn(const string& rgCn) {
+		_rgCN = rgCn;
+	}
+
+	const string& getRgDs() const {
+		return _rgDS;
+	}
+
+	void setRgDs(const string& rgDs) {
+		_rgDS = rgDs;
+	}
+
+	const string& getRgDt() const {
+		return _rgDT;
+	}
+
+	void setRgDt(const string& rgDt) {
+		_rgDT = rgDt;
+	}
+
+	const string& getRgLb() const {
+		return _rgLB;
+	}
+
+	void setRgLb(const string& rgLb) {
+		_rgLB = rgLb;
+	}
+
+	const string& getRgPi() const {
+		return _rgPI;
+	}
+
+	void setRgPi(const string& rgPi) {
+		_rgPI = rgPi;
+	}
+
+	const string& getRgPl() const {
+		return _rgPL;
+	}
+
+	void setRgPl(const string& rgPl) {
+		_rgPL = rgPl;
+	}
+
+	const string& getRgPu() const {
+		return _rgPU;
+	}
+
+	void setRgPu(const string& rgPu) {
+		_rgPU = rgPu;
+	}
+
+	const string& getRgSm() const {
+		return _rgSM;
+	}
+
+	void setRgSm(const string& rgSm) {
+		_rgSM = rgSm;
+	}
+
+	void setBwtFileBase(const string& bwtFileBase) {
+		_bwtFileBase = bwtFileBase;
+	}
+
 protected:
 	/*member variables*/
 	string _bwtFileBase;

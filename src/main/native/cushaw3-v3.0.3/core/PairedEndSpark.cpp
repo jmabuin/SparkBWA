@@ -1,46 +1,53 @@
 /*
- * PairedEnd.cpp
+ * PairedEndSpark.cpp
  *
- *  Created on: Jan 18, 2012
- *      Author: yongchao
+ *  Created on: 25 nov, 2016
+ *      Author: chema
  */
 
-#include "PairedEnd.h"
-#include "SeqFileParser.h"
+#include "PairedEndSpark.h"
 #include "Options.h"
 #include <omp.h>
 
-PairedEnd::PairedEnd(Options* options, Genome * genome, SAM* sam) {
+PairedEndSpark::PairedEndSpark(Options* options, Genome * genome, SAMSpark* sam) {
 	_options = options;
 	_genome = genome;
 	_sam = sam;
 
 	/*get the number of threads*/
-	_numThreads = _options->getNumThreads();
+	//_numThreads = _options->getNumThreads();
 
 	/*create parameters for threads*/
-	_threads.resize(_numThreads);
-	for (size_t tid = 0; tid < _threads.size(); ++tid) {
+	//_threads.resize(_numThreads);
+	/*for (size_t tid = 0; tid < _threads.size(); ++tid) {
 		_threads[tid] = new ThreadParams(tid, _options, _sam,
-				new MemEngine(_options, _genome, _sam), this);
-	}
-	pthread_mutex_init(&_mutex, NULL);
+		new MemEngine(_options, _genome, _sam), this);
+	}*/
+
+	engine = new MemEngine(_options, _genome, _sam);
+
+	//pthread_mutex_init(&_mutex, NULL);
+
 }
 
-PairedEnd::~PairedEnd() {
-	pthread_mutex_destroy(&_mutex);
+PairedEndSpark::~PairedEndSpark() {
+	/*pthread_mutex_destroy(&_mutex);
+
 	for (size_t i = 0; i < _threads.size(); ++i) {
 		delete _threads[i];
 	}
+
 	_threads.clear();
+	*/
 }
-void PairedEnd::estimateInsertSize(int minAlignedPairs, int maxReadBatchSize,
-		int numReadBatchs) {
+
+void PairedEndSpark::estimateInsertSize(int minAlignedPairs, int maxReadBatchSize,
+		int numReadBatchs, SeqSparkParser *parser1, SeqSparkParser *parser2) {
 	size_t nreads;
 	int mapQualReliable = _options->getMapQualReliable();
 	int pairingMode = _options->getPairingMode();
 	int numReadPairs = 0;
-	SeqFileParser *parser1, *parser2;
+	//SeqFileParser *parser1, *parser2;
 	Sequence *seqs1, *seqs2;
 	vector<int> globalInsertSizes;
 	int* localInsertSizes;
@@ -72,14 +79,18 @@ void PairedEnd::estimateInsertSize(int minAlignedPairs, int maxReadBatchSize,
 
 	/*for paired-end alignment*/
 	bool done = false;
-	vector<pair<string, int> > &inputs = _options->getInputFileList();
-	for (size_t file = 0; file < inputs.size(); file += 2) {
+	// Not needed in the Spark case
+
+	//vector<pair<string, int> > &inputs = _options->getInputFileList();
+	// TODO: JMAbuin: Aqui, para luns. os parsers teñen que vir dados e empregar so dous ou dous punteiros
+
+	//for (size_t file = 0; file < inputs.size(); file += 2) {
 		/*open the file for the left sequences*/
-		parser1 = new SeqFileParser(_options, inputs[file].first.c_str(), false,
-				inputs[file].second);
+	//	parser1 = new SeqFileParser(_options, inputs[file].first.c_str(), false,
+	//			inputs[file].second);
 		/*open the file for the right sequences*/
-		parser2 = new SeqFileParser(_options, inputs[file + 1].first.c_str(),
-				false, inputs[file].second);
+	//	parser2 = new SeqFileParser(_options, inputs[file + 1].first.c_str(),
+	//			false, inputs[file].second);
 
 		/*read a batch of paired-end reads*/
 		if ((nreads = parser1->getSeqLockFree(seqs1, maxReadBatchSize)) == 0) {
@@ -107,7 +118,7 @@ void PairedEnd::estimateInsertSize(int minAlignedPairs, int maxReadBatchSize,
 				engine->align(seqs1[index], mapping1);
 				engine->align(seqs2[index], mapping2);
 
-				/*calcualte the insert size*/
+				/*calculate the insert size*/
 				int insertSize = -1; /*dummy insert size*/
 				if (mapping1 && mapping2) {
 					if ((pairingMode == MATE_PAIRED_READS ?
@@ -171,14 +182,14 @@ void PairedEnd::estimateInsertSize(int minAlignedPairs, int maxReadBatchSize,
 		} while (1);
 
 		/*release the file parser*/
-		delete parser1;
-		delete parser2;
+		delete &parser1;
+		delete &parser2;
 
 		/*check if sufficient aligned pairs have got*/
-		if (done) {
-			break;
-		}
-	}
+	//	if (done) {
+	//		break;
+	//	}
+	//}
 	/*release resources*/
 	delete[] localInsertSizes;
 	delete[] seqs2;
@@ -269,64 +280,139 @@ void PairedEnd::estimateInsertSize(int minAlignedPairs, int maxReadBatchSize,
 			"Finish estimating insert size (taken %f seconds using %d threads)\n",
 			etime - stime, _numThreads);
 }
-void PairedEnd::execute() {
-	SeqFileParser *parser1, *parser2;
-	vector<pthread_t> threadIDs;
+void PairedEndSpark::executeEstimate(char *seq1, char *seq2) {
+	SeqSparkParser *parser1, *parser2;
+	//vector<pthread_t> threadIDs;
+
+	parser1 = new SeqSparkParser(_options, false, FILE_FORMAT_FASTQ, 4095, seq1);
+	parser2 = new SeqSparkParser(_options, false, FILE_FORMAT_FASTQ, 4095, seq2);
 
 	/*estimate the insert size?*/
 	if (_options->estimateInsertSize()) {
 		estimateInsertSize(100, INS_SIZE_EST_MULTIPLE,
-				_options->getTopReadsEstIns() / INS_SIZE_EST_MULTIPLE);
+				_options->getTopReadsEstIns() / INS_SIZE_EST_MULTIPLE, parser1, parser2);
 	}
 
-	/*initialize variables*/
-	threadIDs.resize(_numThreads);
+	// For now, we will avoid multithread. When implemented, copy here from PairedEnd.cpp
 
-	/*for paired-end alignment*/
-	vector<pair<string, int> > &inputs = _options->getInputFileList();
-	for (size_t file = 0; file < inputs.size(); file += 2) {
-		/*open the file for the left sequences*/
-		parser1 = new SeqFileParser(_options, inputs[file].first.c_str(), false,
-				inputs[file].second);
-		/*open the file for the right sequences*/
-		parser2 = new SeqFileParser(_options, inputs[file + 1].first.c_str(),
-				false, inputs[file].second);
+	//We delete parsers
+	delete parser1;
+	delete parser2;
 
-		/*create threads*/
-		for (size_t tid = 0; tid < _threads.size(); ++tid) {
-			/*set file parser*/
-			_threads[tid]->setFileParser(parser1, parser2);
+}
 
-			/*create the thread*/
-			if (pthread_create(&threadIDs[tid], NULL, _threadFunc,
-					_threads[tid]) != 0) {
-				Utils::exit("Thread creating failed\n");
+
+char *PairedEndSpark::align(char *seq1, char*seq2) {
+
+	//vector<std::string> results;
+	Sequence sequence1;
+	Sequence sequence2;
+
+	vector<Mapping*> mapv1, mapv2;
+	Mapping *mapping1, *mapping2;
+
+	SeqSparkParser *parser = new SeqSparkParser(_options, false, FILE_FORMAT_FASTQ);
+
+	char result1[8192];
+	char result2[8192];
+
+	char fullResult[8192*2];
+
+	parser->getFastqSeq(sequence1, seq1);
+	parser->getFastqSeq(sequence2, seq2);
+
+	bool paired, mapped1, mapped2, aligned;
+	int64_t numAligned = 0, numPaired = 0;
+	int minMapQual = _options->getMinMapQual();
+	int flags1 = SAM_FPD | SAM_FR1; /*paired-end reads and the first read*/
+	int flags2 = SAM_FPD | SAM_FR2; /*paired-end reads and the second read*/
+	//engine->align(sequence1, sequence2, mapv1, mapv2);
+
+
+	/*invoke the engine to get the paired-end alignments*/
+	if ((paired = engine->align(sequence1, sequence2, mapv1, mapv2))) {
+		numPaired++;
+	}
+
+	/*output the alignment*/
+
+	if (paired) { /*paired alignments found*/
+		if (mapv1.size() != mapv2.size()) {
+			Utils::exit(
+					"Error happened for paired-end alignments in line %d in function %s\n",
+					__LINE__, __FUNCTION__);
+		}
+
+		aligned = false;
+
+		for (size_t i = 0; i < mapv1.size(); ++i) {
+			mapping1 = mapv1[i];
+			mapping2 = mapv2[i];
+			if (mapping1->_mapQual >= minMapQual
+					|| mapping2->_mapQual >= minMapQual) {
+				_sam->printPaired(sequence1, *mapping1, *mapping2, result1, true, flags1);
+				_sam->printPaired(sequence2, *mapping2, *mapping1, result2, true, flags2);
+				aligned = true;
+			} else {
+				/*deemed to be unaligned*/
+				_sam->print(sequence1, result1, flags1 | SAM_FMU);
+				_sam->print(sequence2, result2, flags2 | SAM_FMU);
 			}
 		}
-		/*wait for the completion of all threads*/
-		for (size_t tid = 0; tid < _threads.size(); ++tid) {
-			pthread_join(threadIDs[tid], NULL);
+		if (aligned) {
+			numAligned += 2;
 		}
-		/*release the file parser*/
-		delete parser1;
-		delete parser2;
-	}
-	threadIDs.clear();
+	} else {
+		if (mapv1.size() >= 2 || mapv2.size() >= 2) {
+			Utils::exit(
+					"Error occured for paired-end alignments in line %d in function %s\n",
+					__LINE__, __FUNCTION__);
+		}
+		/*get the mappings*/
+		mapping1 = mapv1.size() > 0 ? mapv1[0] : NULL;
+		mapping2 = mapv2.size() > 0 ? mapv2[0] : NULL;
 
-	/*report the alignment information*/
-	int64_t sum = 0, sum2 = 0, sum3 = 0;
-	for (size_t tid = 0; tid < _threads.size(); ++tid) {
-		sum += _threads[tid]->_numReads;
-		sum2 += _threads[tid]->_numAligned;
-		sum3 += _threads[tid]->_numPaired;
+		/*print out the mappings*/
+		mapped1 = mapping1 && mapping1->_mapQual >= minMapQual;
+		mapped2 = mapping2 && mapping2->_mapQual >= minMapQual;
+		if (mapped1 && mapped2) {
+			_sam->printPaired(sequence1, *mapping1, *mapping2, result1, false, flags1);
+			_sam->printPaired(sequence2, *mapping2, *mapping1, result2, false, flags2);
+			numAligned += 2;
+		} else {
+			if (mapped1) {
+				_sam->print(sequence1, *mapping1, result1, flags1 | SAM_FMU);
+				++numAligned;
+			} else {
+				/*deemed to be unaligned*/
+				if (mapped2) {
+					_sam->printPaired(sequence1, *mapping2, result2, flags1);
+				} else {
+					_sam->print(sequence1, result1, flags1 | SAM_FMU);
+				}
+			}
+			if (mapped2) {
+				_sam->print(sequence2, *mapping2, result2, flags2 | SAM_FMU);
+				++numAligned;
+			} else {
+				if (mapped1) {
+					_sam->printPaired(sequence2, *mapping1, result1, flags2);
+				} else {
+					_sam->print(sequence2, result2, flags2 | SAM_FMU);
+				}
+			}
+		}
 	}
-	Utils::log("#Reads aligned: %ld / %ld (%.2f%%)\n", sum2, sum,
-			((double) (sum2)) / sum * 100);
 
-	Utils::log("#Reads paired: %ld / %ld (%.2f%%)\n", sum3, sum,
-			((double) (sum3)) / sum * 100);
+
+	strcpy(fullResult, result1);
+	strcat(fullResult, result2);
+	//return results;
+
+
 }
-void* PairedEnd::_threadFunc(void* arg) {
+
+void* PairedEndSpark::_threadFunc(void* arg) {
 	Sequence seq1, seq2;
 	Mapping *mapping1, *mapping2;
 	int64_t numReads = 0, numAligned = 0, numPaired = 0;
@@ -335,7 +421,7 @@ void* PairedEnd::_threadFunc(void* arg) {
 	Options* options = params->_options;
 	SeqFileParser *parser1 = params->_parser1;
 	SeqFileParser *parser2 = params->_parser2;
-	PairedEnd* aligner = (PairedEnd*) params->_aligner;
+	PairedEndSpark* aligner = (PairedEndSpark*) params->_aligner;
 	MemEngine *engine = params->_engine;
 	double stime = Utils::getSysTime();
 	double etime;
@@ -398,7 +484,7 @@ void* PairedEnd::_threadFunc(void* arg) {
 		} else {
 			if (mapv1.size() >= 2 || mapv2.size() >= 2) {
 				Utils::exit(
-						"Error occured for paired-end alignments in line %d in function %s\n",
+						"Error occured for paired-end alignments in line %d in funciton %s\n",
 						__LINE__, __FUNCTION__);
 			}
 			/*get the mappings*/

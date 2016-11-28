@@ -26,6 +26,7 @@ MemEngine::MemEngine(Options* options, Genome* rgenome, SAM* sam) {
 	_options = options;
 	_rgenome = rgenome;
 	_sam = sam;
+	_samSpark = NULL;
 	_rbwt = _rgenome->getBWT();
 	_rsa = _rgenome->getSuffixArray();
 
@@ -78,6 +79,65 @@ MemEngine::MemEngine(Options* options, Genome* rgenome, SAM* sam) {
 	_bestHits1.reserve(128);
 	_bestHits2.reserve(128);
 }
+
+MemEngine::MemEngine(Options* options, Genome* rgenome, SAMSpark* sam) {
+	_options = options;
+	_rgenome = rgenome;
+	_sam = NULL;
+	_samSpark = sam;
+	_rbwt = _rgenome->getBWT();
+	_rsa = _rgenome->getSuffixArray();
+
+	/*get the reference sequence length*/
+	_bwtSeqLength = _rbwt->getBwtSeqLength();
+
+	/*get the baseBitmap*/
+	_baseBitmap = _rgenome->getBaseBitmap();
+
+	/*get the packed genome*/
+	_pacGenome = _rgenome->getPacGenome();
+	_basePacGenome = _rgenome->getBasePacGenome();
+
+	/*get the minimal seed size*/
+	_minIdentity = _options->getMinIdentity() * 100;
+	_gminIdentity = _options->getGMinIdentity() * 100;
+	_gminIdentityRealign = 0;
+	_minRatio = _options->getMinRatio(); /*the minimal portion of the query in the optimal local alignment*/
+	_maxSeedOcc = _options->getMaxSeedOcc();
+	_minAlignScore = _options->getMinAlignScore();
+	_mapQualReliable = 20;
+	_mapRegionSizeFactor = 2;
+	_maxGapSize = 10;
+	_maxEditDistance = _options->getMaxEditDistance();
+	_maxMultiAligns = _options->getMaxMultiAligns();
+	_maxSeedPairs = _options->getMaxSeedPairs();
+	_alignType = _options->getAlignType();
+	_matchScore = _options->getMatch();
+	_pairingMode = _options->getPairingMode();
+	_colorspace = _options->isColorSpace();
+	_maskAmbiguous = _options->maskAmbiguous();
+	_seAlign = !_options->isPaired();
+	_sensitivePairing = _options->isSensitiveParing();
+	_minPairPriority = 0.7;
+
+	/*for processing*/
+	updateDistance();
+
+	/*create default local aligner*/
+	_aligner = new Aligner(options);
+
+	_targetSize = 1024;
+	_target = new uint8_t[_targetSize];
+	if (_target == NULL) {
+		Utils::exit("Memory allocation failed in function %s line %d\n",
+				__FUNCTION__, __LINE__);
+	}
+
+	/*reserve space*/
+	_bestHits1.reserve(128);
+	_bestHits2.reserve(128);
+}
+
 MemEngine::~MemEngine() {
 
 	/*release the aligner*/

@@ -1,7 +1,8 @@
 sources=Aligner.cpp BWT.cpp CigarAlign.cpp Genome.cpp main.cpp \
 	MemEngine.cpp Options.cpp PairedEnd.cpp SAM.cpp Seed.cpp \
 	SeqFileParser.cpp Sequence.cpp SingleEnd.cpp SuffixArray.cpp \
-	Utils.cpp CSOptions.cpp BSOptions.cpp
+	Utils.cpp CSOptions.cpp BSOptions.cpp PairedEndSpark.cpp \
+	SeqSparkParser.cpp SAMSpark.cpp
 
 root_dir = .
 core_dir = core
@@ -24,7 +25,7 @@ else
 endif
 
 #compile optionsK
-CXXFLAGS += -static -O3 -Wall -fPIC -fopenmp -funroll-loops $(MACROS) $(SSE_ARCH)
+CXXFLAGS += -static -O3 -Wall -fopenmp -fPIC -funroll-loops $(MACROS) $(SSE_ARCH)
 CXX = g++
 
 

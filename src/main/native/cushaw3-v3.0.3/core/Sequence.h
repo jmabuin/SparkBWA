@@ -14,7 +14,6 @@ struct Sequence
 	/*member functions*/
 	Sequence();
 	Sequence(const Sequence& s);
-	Sequence(const char *newSeq, int fileFormat);
 	~Sequence();
 	void setNameSize(size_t size);
 	void setSequenceSize(size_t size, bool quals);
@@ -27,11 +26,6 @@ struct Sequence
 	void clear();
 	void print(FILE* file);
 
-	size_t parseFastqSeq(char *seq);
-	void resizeBuffer(size_t nsize);
-
-	size_t BUFFER_SIZE = 4095;
-
 	/*member variables*/
 	uint8_t* _name;
 	uint8_t* _bases;
@@ -41,12 +35,6 @@ struct Sequence
 	uint32_t _tlength;
 	uint32_t _nameSize;
 	uint32_t _seqSize;
-
-	uint8_t* _buffer;
-	size_t _size;
-	bool _trimPrimer;
-
-	static const uint8_t _codeTab[26];
 };
 
 #endif /* SEQUENCE_H_ */

@@ -13,6 +13,7 @@
 #include "Sequence.h"
 #include "Aligner.h"
 #include "SAM.h"
+#include "SAMSpark.h"
 #include "Options.h"
 #include "Mapping.h"
 #include "Structs.h"
@@ -22,6 +23,7 @@ class MemEngine
 {
 public:
 	MemEngine(Options* options, Genome* rgenome, SAM* sam);
+	MemEngine(Options* options, Genome* rgenome, SAMSpark* sam);
 	~MemEngine();
 
 	/*for single-end alignment*/
@@ -231,6 +233,7 @@ private:
 
 	/*SAM output*/
 	SAM* _sam;
+	SAMSpark* _samSpark;
 
 	/*processing*/
 	vector<uint4> _ranges, _ranges2;
