@@ -35,9 +35,36 @@ public class CushawJni {
         }
     }
 
+    public CushawJni() {
+        try {
+            NativeUtils.loadLibraryFromJar("/libcushaw.so");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
+    public int CushawInitJava() {
+        return this.CushawInit();
+    }
+
+    public int executeEstimateJava(String seq1, String seq2) {
+        return this.executeEstimateJNI(seq1, seq2);
+    }
+
+    public int loadIndexJava(String index) {
+        return this.loadIndexJNI(index);
+    }
+
+    public String alignJava(String seq1, String seq2) {
+        return this.alignJNI(seq1, seq2);
+    }
+
 
     //Declaration of native method
-    private static native int CushawInit(int argc, String[] argv, int[] lenStrings);
-    private static native int parseSequence1(String seq1);
-    private static native int parseSequence2(String seq1);
+    private native int CushawInit();
+    private native int executeEstimateJNI(String seq1, String seq2);
+    private native int loadIndexJNI(String indexPath);
+    private native String alignJNI( String seq1, String seq2);
 }
