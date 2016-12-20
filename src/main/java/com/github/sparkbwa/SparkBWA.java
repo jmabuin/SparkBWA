@@ -21,7 +21,7 @@ package com.github.sparkbwa;
 /** Main class. Here starts the program
  * @author Jose M. Abuin
  */
-
+import com.github.sparkbwa.BwaOptions.Aligner;
 public class SparkBWA {
 
 	/**
@@ -33,7 +33,14 @@ public class SparkBWA {
 		// Creation of BwaInterpreter
 		BwaInterpreter newBwa = new BwaInterpreter(args);
 
-		//Run of BwaInterpreter
-		newBwa.runBwa();
+		if(newBwa.getAligner() == Aligner.BWA) {
+			//Run of BwaInterpreter
+			newBwa.runBwa();
+		}
+		else if(newBwa.getAligner() == Aligner.CUSHAW) {
+			//Run of CushawInterpreter
+			newBwa.runCushaw();
+		}
+
 	}
 }
