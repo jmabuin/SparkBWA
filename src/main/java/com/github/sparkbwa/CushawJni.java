@@ -19,13 +19,14 @@ package com.github.sparkbwa;
 import cz.adamh.utils.NativeUtils;
 
 import java.io.IOException;
+import java.io.Serializable;
 
 /**
  * Class that calls Cushaw functions by means of JNI
  *
  * @author José M. Abuín
  */
-public class CushawJni {
+public class CushawJni implements Serializable {
 
     static {
         try {
@@ -45,8 +46,8 @@ public class CushawJni {
 
 
 
-    public int CushawInitJava() {
-        return this.CushawInit();
+    public int CushawInitJava(String[] args) {
+        return this.CushawInit(args);
     }
 
     public int executeEstimateJava(String seq1, String seq2) {
@@ -63,7 +64,7 @@ public class CushawJni {
 
 
     //Declaration of native method
-    private native int CushawInit();
+    private native int CushawInit(String[] arguments);
     private native int executeEstimateJNI(String seq1, String seq2);
     private native int loadIndexJNI(String indexPath);
     private native String alignJNI( String seq1, String seq2);
