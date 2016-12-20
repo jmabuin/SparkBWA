@@ -13,7 +13,7 @@ extern "C" {
 
 //JNIEXPORT jint JNICALL JNIFUNCTION_CUSHAW(parseSequence1(JNIEnv * env, jobject object, jstring seq1));
 //JNIEXPORT jint JNICALL JNIFUNCTION_CUSHAW(parseSequence2(JNIEnv * env, jobject object, jstring seq2));
-JNIEXPORT jint JNICALL JNIFUNCTION_CUSHAW(CushawInit(JNIEnv * env, jobject object));
+JNIEXPORT jint JNICALL JNIFUNCTION_CUSHAW(CushawInit(JNIEnv * env, jobject object, jobjectArray stringArray));
 JNIEXPORT jint JNICALL JNIFUNCTION_CUSHAW(executeEstimateJNI(JNIEnv * env, jobject object, jstring seq1, jstring seq2));
 JNIEXPORT jint JNICALL JNIFUNCTION_CUSHAW(loadIndexJNI(JNIEnv * env, jobject object, jstring indexPath));
 JNIEXPORT jstring JNICALL JNIFUNCTION_CUSHAW(alignJNI(JNIEnv * env, jobject object, jstring seq1, jstring seq2));
