@@ -39,7 +39,18 @@ public class CushawPairedAlignment extends CushawAlignmentBase implements Functi
      */
     public CushawPairedAlignment(SparkContext context, String indexPath) {
         super(context, indexPath);
+        /*
         this.cushaw = new CushawJni();
+
+
+        String[] myArgs = new String[3];
+
+        myArgs[0] = "cushaw3";
+        myArgs[1] = "-r";
+        myArgs[2] = indexPath;
+
+        this.cushaw.CushawInitJava(myArgs);
+        */
     }
 
     /**
@@ -52,7 +63,18 @@ public class CushawPairedAlignment extends CushawAlignmentBase implements Functi
      */
     public Iterator<String> call(Integer arg0, Iterator<Tuple2<String, String>> arg1) throws Exception {
 
-        LOG.info("["+this.getClass().getName()+"] :: Tmp dir: " + this.tmpDir);
+        this.cushaw = new CushawJni();
+
+
+        String[] myArgs = new String[3];
+
+        myArgs[0] = "cushaw3";
+        myArgs[1] = "-r";
+        myArgs[2] = this.indexPath;
+
+        this.cushaw.CushawInitJava(myArgs);
+
+        LOG.info("["+this.getClass().getName()+"] :: Cushaw created at: " + String.valueOf(arg0));
 
         String inputSequences1 = "";
         String inputSequences2 = "";
@@ -77,6 +99,8 @@ public class CushawPairedAlignment extends CushawAlignmentBase implements Functi
         }
 
         this.cushaw.executeEstimateJava(inputSequences1, inputSequences2);
+
+        LOG.info("["+this.getClass().getName()+"] :: JMAbuin estimated size at: " + String.valueOf(arg0));
 
         for(int i = 0; i< sequences1.size(); i++) {
 
