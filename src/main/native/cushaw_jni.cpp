@@ -31,6 +31,7 @@
 #include "cushaw3-v3.0.3/core/SAMSpark.h"
 #include "cushaw3-v3.0.3/core/PairedEndSpark.h"
 
+#define BIG_BUFFER_SIZE 25*1024*1024
 
 PairedEndSpark *pairedSpark;
 Genome *genome;
@@ -38,22 +39,47 @@ Options *options;
 SAMSpark *samSpark;
 char *outputSAM;
 
-JNIEXPORT jint JNICALL JNIFUNCTION_CUSHAW(CushawInit(JNIEnv * env, jobject object)) {
+JNIEXPORT jint JNICALL JNIFUNCTION_CUSHAW(CushawInit(JNIEnv * env, jobject object, jobjectArray stringArray)) {
 
     //Parte argumentos
    	//char **argv;
-   	//char **argvTmp;
+   	char **argvTmp;
 
-   	//int stringCount = (*env).GetArrayLength(arguments);//env->GetArrayLength(stringArray);
+   	int myArgc = (*env).GetArrayLength(stringArray);//env->GetArrayLength(stringArray);
 
-   	//argvTmp = (char **) malloc(stringCount*sizeof(char **));
+   	argvTmp = (char **) malloc(myArgc*sizeof(char *));
 
-    outputSAM = NULL;
+    //outputSAM = NULL;
+    outputSAM = (char *) malloc (sizeof(char) * BIG_BUFFER_SIZE);
+
+    fprintf(stderr,"[%s] Creating Cushaw C++ Objects ...\n", __func__);
+    fprintf(stderr,"[%s] Creating Options ...\n", __func__);
+
+    //char **myArgv;
+
+    int i = 0;
+
+    for (i=0; i<myArgc; i++) {
+        jstring string = (jstring) (*env).GetObjectArrayElement(stringArray, i);
+        argvTmp[i] = (char *)(*env).GetStringUTFChars(string, 0);
+
+
+    }
+
 
     options = new BSOptions();
+    options->parse(myArgc, argvTmp);
+
+    fprintf(stderr,"[%s] Creating Genome ...\n", __func__);
     genome = new Genome(options, true);
+
+    fprintf(stderr,"[%s] Creating SAM ...\n", __func__);
     samSpark = new SAMSpark(options, genome, outputSAM);
+
+    fprintf(stderr,"[%s] Creating PairedEnd ...\n", __func__);
     pairedSpark = new PairedEndSpark(options, genome, samSpark);
+
+    fprintf(stderr,"[%s] Objects created ...\n", __func__);
 
    	return 1;
 
@@ -63,6 +89,10 @@ JNIEXPORT jint JNICALL JNIFUNCTION_CUSHAW(executeEstimateJNI(JNIEnv * env, jobje
 
     const char *buf1, *buf2;
     //const jbyte *str;
+
+    fprintf(stderr, "[%s] JMAbuin Inside executeEstimate\n",__func__);
+
+
     buf1 = (*env).GetStringUTFChars(seq1, NULL);
 
     if (buf1 == NULL) {
@@ -72,6 +102,7 @@ JNIEXPORT jint JNICALL JNIFUNCTION_CUSHAW(executeEstimateJNI(JNIEnv * env, jobje
     char *charSeq1 = (char *) malloc(sizeof(char)*(strlen(buf1)+1));
     strcpy(charSeq1, buf1);
 
+    fprintf(stderr, "[%s] JMAbuin length of first split %d\n", __func__, strlen(charSeq1));
 
     buf2 = (*env).GetStringUTFChars(seq2, NULL);
 
@@ -81,6 +112,8 @@ JNIEXPORT jint JNICALL JNIFUNCTION_CUSHAW(executeEstimateJNI(JNIEnv * env, jobje
 
     char *charSeq2 = (char *) malloc(sizeof(char)*(strlen(buf2)+1));
     strcpy(charSeq2, buf2);
+
+    fprintf(stderr, "[%s] JMAbuin length of second split %d\n", __func__, strlen(charSeq2));
 
     pairedSpark->executeEstimate(charSeq1, charSeq2);
 
