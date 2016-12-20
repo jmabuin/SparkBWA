@@ -330,9 +330,9 @@ public class BwaInterpreter {
 				.collect();
 	}
 	/**
-	 * Runs BWA with the specified options
+	 * Runs Cushaw with the specified options
 	 *
-	 * @brief This function runs BWA with the input data selected and with the options also selected
+	 * @brief This function runs Cushaw with the input data selected and with the options also selected
 	 *     by the user.
 	 */
 	public void runCushaw() {
@@ -492,5 +492,9 @@ public class BwaInterpreter {
 		setTotalInputLength();
 
 		//ContextCleaner cleaner = this.ctx.sc().cleaner().get();
+	}
+
+	public BwaOptions.Aligner getAligner() {
+		return this.options.getAligner();
 	}
 }
