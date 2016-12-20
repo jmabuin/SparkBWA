@@ -48,8 +48,14 @@ public class BwaOptions {
 
 	private boolean useReducer			= false;
 
+	public enum Aligner { BWA, CUSHAW}
+
+
+
+	Aligner aligner;
+
 	private String correctUse =
-		"spark-submit --class com.github.sparkbwa.SparkBWA SparkBWA-0.2.jar";// [SparkBWA Options] Input.fastq [Input2.fastq] Output\n";
+		"spark-submit --class com.github.sparkbwa.SparkBWA SparkBWA-0.3.jar";// [SparkBWA Options] Input.fastq [Input2.fastq] Output\n";
 
 
 	// Header to show when the program is not launched correctly
@@ -59,7 +65,7 @@ public class BwaOptions {
 		  //+ "To set the Output - setOutputPath(string)\n"
 		  //+ "The available SparkBWA options are: \n\n";
 
-	private String headerAlt = "spark-submit --class com.github.sparkbwa.SparkBWA SparkBWA-0.2.jar\n" +
+	private String headerAlt = "spark-submit --class com.github.sparkbwa.SparkBWA SparkBWA-0.3.jar\n" +
 			"       [-a | -b | -m]  [-f | -k] [-h] [-i <Index prefix>]   [-n <Number of\n" +
 			"       partitions>] [-p | -s] [-r]  [-w <\"BWA arguments\">]\n" +
 			"       <FASTQ file 1> [FASTQ file 2] <SAM file output>";
@@ -127,6 +133,9 @@ public class BwaOptions {
 			else if(groupName.contains("The program is going to merge")){
 				System.out.println("Reducer options: ");
 			}
+			else if(groupName.contains("align")) {
+				System.out.println("Aligner options: ");
+			}
 			else{
 				System.out.println(groupName + "options: ");
 			}
@@ -165,6 +174,7 @@ public class BwaOptions {
 	 * Constructor to use with no options
 	 */
 	public BwaOptions() {
+		this.aligner = Aligner.BWA;
 	}
 
 	/**
@@ -190,6 +200,8 @@ public class BwaOptions {
 		//Parse the given arguments
 		CommandLineParser parser = new BasicParser();
 		CommandLine cmd;
+
+		this.aligner = Aligner.BWA;
 
 		try {
 			cmd = parser.parse(this.options, args);
@@ -284,6 +296,14 @@ public class BwaOptions {
 				//formatter.printHelp(correctUse, header, options, footer, true);
 				this.printHelp();
 				System.exit(0);
+			}
+
+			// Aligner
+			if (cmd.hasOption('C') || cmd.hasOption("cushaw")) {
+				this.aligner = Aligner.CUSHAW;
+			}
+			else if(cmd.hasOption('B') || cmd.hasOption("bwa")) {
+				this.aligner = Aligner.BWA;
 			}
 
 			//Input and output paths
@@ -426,6 +446,17 @@ public class BwaOptions {
 		helpGroup.addOption(help);
 
 		privateOptions.addOptionGroup(helpGroup);
+
+		//Aligner
+		OptionGroup align = new OptionGroup();
+
+		Option alignBwa = new Option("B", "bwa", false, "Uses bwa as aligner");
+		align.addOption(alignBwa);
+
+		Option alignCushaw = new Option("C", "cushaw", false, "Uses cushaw as aligner");
+		align.addOption(alignCushaw);
+
+		privateOptions.addOptionGroup(align);
 
 		return privateOptions;
 	}
@@ -712,5 +743,13 @@ public class BwaOptions {
 	 */
 	public void setuseReducer( boolean newValueReducer){
 		this.useReducer = newValueReducer;
+	}
+
+	public Aligner getAligner() {
+		return aligner;
+	}
+
+	public void setAligner(Aligner aligner) {
+		this.aligner = aligner;
 	}
 }
