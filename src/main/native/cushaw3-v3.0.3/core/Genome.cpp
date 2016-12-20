@@ -29,6 +29,7 @@ void Genome::_init(string bwtFileName, string saFileName, string annFileName,
 	if (file == NULL) {
 		Utils::exit("Failed to open file %s\n", annFileName.c_str());
 	}
+
 	fscanf(file, "%lld%d%u", &longVar, &_numSeqs, &_seed);
 
 	_genomeLength = longVar;

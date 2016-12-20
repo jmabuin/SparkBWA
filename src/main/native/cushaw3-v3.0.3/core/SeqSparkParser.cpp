@@ -22,17 +22,22 @@ SeqSparkParser::SeqSparkParser(Options* options, bool withLock, int type, size_t
 
 	//char modes[5];
 	/*colorspace or base space*/
-	_colorspace = options->isColorSpace();
+
+	//fprintf(stderr, "JMAbuin parsing options line\n");
+	Utils::log("[%s] JMAbuin parsing options line %d\n",__FUNCTION__, __LINE__);
+
+
+	/*_colorspace = options->isColorSpace();
 	_trimPrimer = options->trimPrimer();
 
 	this->sequencesRaw = sequencesRaw;
 
 	currentSequenceIndex = 0;
 
-	/*create mutex*/
-	_withLock = withLock;
-	pthread_mutex_init(&_mutex, NULL);
-
+	//create mutex
+	//_withLock = withLock;
+	//pthread_mutex_init(&_mutex, NULL);
+    fprintf(stderr, "[%s] JMAbuin No mutex\n", __func__);
 	// For now only FASTQ format
 	_format = FILE_FORMAT_FASTQ;
 	_size = BUFFER_SIZE;
@@ -43,14 +48,14 @@ SeqSparkParser::SeqSparkParser(Options* options, bool withLock, int type, size_t
 		Utils::exit("Memory allocation failed in file %s in line %d\n",
 			__FUNCTION__, __LINE__);
 	}
-
-	Utils::log("FASTQ format in Spark parser\n");
+*/
+	//Utils::log("FASTQ format in Spark parser\n");
 }
 
 SeqSparkParser::~SeqSparkParser() {
 
 	/*destroy mutex*/
-	pthread_mutex_destroy(&_mutex);
+	//pthread_mutex_destroy(&_mutex);
 
 }
 

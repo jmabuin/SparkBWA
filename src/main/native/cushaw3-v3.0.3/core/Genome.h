@@ -37,6 +37,7 @@ class Genome
 {
 public:
 	Genome(Options* options, bool useSpark = false) {
+
 		string& bwtBase = options->getBwtFileBase();
 		string bwtFileName, saFileName, annFileName;
 		string pacFileName, basePacFileName;
@@ -59,11 +60,11 @@ public:
 		basePacFileName = bwtBase + ".nt.pac"; /*for color-space*/
 
 		/*read the data from files*/
-		if(!useSpark) {
+		//if(!useSpark) {
 			_init(bwtFileName, saFileName, annFileName, baseBitmapFileName,
 				pacFileName, basePacFileName, options->isColorSpace(),
 				options->maskAmbiguous());
-		}
+		//}
 	}
 	~Genome() {
 		if (_bwt)
@@ -151,16 +152,17 @@ public:
 					_anns[i]._length);
 		}
 	}
-	inline void genomeNamesOut(char *file) {
-		if (file == NULL) {
+	inline void genomeNamesOut(char *buffer) {
+		if (buffer == NULL) {
 			Utils::exit("Invalid file pointer in function %s line %d\n",
 					__FUNCTION__, __LINE__);
 		}
-		char buffer[4096];
+
 		for (int i = 0; i < _numSeqs; ++i) {
+		    //fprintf(stderr,"[%s] Inside loop %d\n", __func__, i);
+		    //fprintf(stderr,"[%s] %s %d  %d\n", __func__, _anns[i]._name, _anns[i]._length, i);
 			sprintf(buffer, "@SQ\tSN:%s\tLN:%d\n", _anns[i]._name,
 					_anns[i]._length);
-			strcat(file, buffer);
 		}
 	}
 

@@ -10,6 +10,7 @@
 #include <omp.h>
 
 PairedEndSpark::PairedEndSpark(Options* options, Genome * genome, SAMSpark* sam) {
+
 	_options = options;
 	_genome = genome;
 	_sam = sam;
@@ -25,7 +26,7 @@ PairedEndSpark::PairedEndSpark(Options* options, Genome * genome, SAMSpark* sam)
 	}*/
 
 	engine = new MemEngine(_options, _genome, _sam);
-
+    //imprimir();
 	//pthread_mutex_init(&_mutex, NULL);
 
 }
@@ -39,6 +40,10 @@ PairedEndSpark::~PairedEndSpark() {
 
 	_threads.clear();
 	*/
+}
+
+void PairedEndSpark::imprimir() {
+    fprintf(stderr,"[%s] JMAbuin onde estamos\n", __func__);
 }
 
 void PairedEndSpark::estimateInsertSize(int minAlignedPairs, int maxReadBatchSize,
@@ -73,10 +78,12 @@ void PairedEndSpark::estimateInsertSize(int minAlignedPairs, int maxReadBatchSiz
 	}
 	/*reserved space for global insert sizes*/
 	globalInsertSizes.reserve(maxReadBatchSize * numReadBatchs);
-
+    Utils::log("[%s] JMAbuin checkpoint 1 Line %d\n", __FUNCTION__, __LINE__);
 	/*set the number of threads for OpenMP runtime*/
-	omp_set_num_threads(_numThreads);
 
+	//JMAbuin:: Not for now
+	//omp_set_num_threads(_numThreads);
+Utils::log("[%s] JMAbuin checkpoint 2 Line %d\n", __FUNCTION__, __LINE__);
 	/*for paired-end alignment*/
 	bool done = false;
 	// Not needed in the Spark case
@@ -91,20 +98,22 @@ void PairedEndSpark::estimateInsertSize(int minAlignedPairs, int maxReadBatchSiz
 		/*open the file for the right sequences*/
 	//	parser2 = new SeqFileParser(_options, inputs[file + 1].first.c_str(),
 	//			false, inputs[file].second);
-
+Utils::log("[%s] JMAbuin checkpoint 3 Line %d\n", __FUNCTION__, __LINE__);
 		/*read a batch of paired-end reads*/
 		if ((nreads = parser1->getSeqLockFree(seqs1, maxReadBatchSize)) == 0) {
 			Utils::log("Empty input file\n");
 		}
+		Utils::log("[%s] JMAbuin checkpoint 4 Line %d\n", __FUNCTION__, __LINE__);
 		if (parser2->getSeqLockFree(seqs2, maxReadBatchSize) != nreads) {
 			Utils::exit("The two files have different number of reads\n");
 		}
-
+Utils::log("[%s] JMAbuin checkpoint 5 Line %d\n", __FUNCTION__, __LINE__);
 		/*start the main loop*/
 		do {
 			size_t index;
 			/*get the single-end alignments*/
-#pragma omp parallel for private(index) default(shared) schedule(dynamic, 1)
+			//JMAbuin:: Not for now
+            //#pragma omp parallel for private(index) default(shared) schedule(dynamic, 1)
 			for (index = 0; index < nreads; ++index) {
 
 				/*get the thread ID*/
@@ -180,11 +189,11 @@ void PairedEndSpark::estimateInsertSize(int minAlignedPairs, int maxReadBatchSiz
 				Utils::exit("The two files have different number of reads\n");
 			}
 		} while (1);
-
+Utils::log("[%s] JMAbuin checkpoint 6 Line %d\n", __FUNCTION__, __LINE__);
 		/*release the file parser*/
 		delete &parser1;
 		delete &parser2;
-
+Utils::log("[%s] JMAbuin checkpoint 7 Line %d\n", __FUNCTION__, __LINE__);
 		/*check if sufficient aligned pairs have got*/
 	//	if (done) {
 	//		break;
@@ -281,16 +290,27 @@ void PairedEndSpark::estimateInsertSize(int minAlignedPairs, int maxReadBatchSiz
 			etime - stime, _numThreads);
 }
 void PairedEndSpark::executeEstimate(char *seq1, char *seq2) {
-	SeqSparkParser *parser1, *parser2;
-	//vector<pthread_t> threadIDs;
 
+	SeqSparkParser *parser1, *parser2;
+
+    Utils::log("[%s] JMAbuin Creating parsers %d\n",__FUNCTION__, __LINE__);
 	parser1 = new SeqSparkParser(_options, false, FILE_FORMAT_FASTQ, 4095, seq1);
 	parser2 = new SeqSparkParser(_options, false, FILE_FORMAT_FASTQ, 4095, seq2);
 
+	//parser1 = new SeqSparkParser(NULL, false, FILE_FORMAT_FASTQ, 4095, seq1);
+    //parser2 = new SeqSparkParser(NULL, false, FILE_FORMAT_FASTQ, 4095, seq2);
+
+
+    Utils::log("[%s] JMAbuin parsers created %d\n", __FUNCTION__, __LINE__);
+
 	/*estimate the insert size?*/
 	if (_options->estimateInsertSize()) {
+	    Utils::log("[%s] JMAbuin estimating insert size %d\n", __FUNCTION__, __LINE__);
 		estimateInsertSize(100, INS_SIZE_EST_MULTIPLE,
 				_options->getTopReadsEstIns() / INS_SIZE_EST_MULTIPLE, parser1, parser2);
+	}
+	else {
+	    Utils::log("[%s] Insert size will not be estimated %d\n", __FUNCTION__, __LINE__);
 	}
 
 	// For now, we will avoid multithread. When implemented, copy here from PairedEnd.cpp

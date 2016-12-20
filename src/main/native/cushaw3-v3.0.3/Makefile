@@ -32,7 +32,7 @@ CXX = g++
 #bam reader
 BAMREADER = $(root_dir)/bamreader
 DNAINDEXER = $(root_dir)/genomeindexer
-mylibs += -L $(BAMREADER) -lbamreader -L$(DNAINDEXER) -lgenomeindexer
+mylibs += -L$(BAMREADER) -lbamreader -L$(DNAINDEXER) -lgenomeindexer
 CXXFLAGS += -I $(BAMREADER) -I $(DNAINDEXER)
 
 all: dir bamr dnai $(objs)

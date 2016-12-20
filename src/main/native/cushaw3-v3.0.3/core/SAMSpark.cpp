@@ -16,12 +16,13 @@ SAMSpark::SAMSpark(Options* options, Genome* genome, char *str) {
 
 	/*print out the header*/
 	sprintf(str, "@HD\tVN:1.0\tSO:unsorted\n");
-	char buffer[BUFF_SIZE];
+	char *buffer = (char *) malloc(sizeof(char) * BUFF_SIZE);
 
 	/*print out the genome sequence information in SAM format*/
 	_genome->genomeNamesOut(buffer);
-	strcat(str,buffer);
 
+	strcat(str,buffer);
+    //fprintf(stderr,"[%s] Estamos aqui \n",__func__);
 	/*print out the read group header information*/
 	_groupID = NULL;
 	_groupLB = NULL;

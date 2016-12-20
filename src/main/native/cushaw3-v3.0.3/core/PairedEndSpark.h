@@ -41,12 +41,12 @@ public:
 	MemEngine *engine;
 
 private:
+
+    void imprimir();
 	/*private member variables*/
 	Options* _options;
 	Genome* _genome;
 	SAMSpark* _sam;
-
-
 
 	int _numThreads;
 	/*thread parameters*/

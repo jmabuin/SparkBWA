@@ -25,7 +25,7 @@ void BWT::loadFromFile(const char* bwtFileName) {
 
 	bwtFile = fopen(bwtFileName, "rb");
 	if (bwtFile == NULL) {
-		Utils::exit("Failed to open BWT file: %s", bwtFileName);
+		Utils::exit("Failed to open BWT file: %s\n", bwtFileName);
 	}
 
 	//get the bwt size
