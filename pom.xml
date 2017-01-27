@@ -32,6 +32,7 @@
 
     <properties>
         <my.native.path>./src/main/native/</my.native.path>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <build>
@@ -39,7 +40,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>1.1.1</version>
+                <version>1.5.0</version>
                 <executions>
                     <execution>
                         <id>makeBwa</id>
